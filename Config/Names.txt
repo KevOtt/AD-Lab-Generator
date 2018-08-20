@@ -1,0 +1,72 @@
+###########################
+# This config file specifies the user names the AD Lab Generator will use
+# Users should be specified, one per line, in the format "FirstName,LastName"
+# By the Lab Generator will use these names as seeds to create random names
+# The more unique names in here, the more unique names the tool will create
+# Lines beginning with "#" are comment lines
+###########################
+
+Jim,Del Gaizo
+Bob,Griese
+Earl,Morrall
+Jim,Kiick
+Charles,Leigh
+Mercury,Morris
+Hubert,Ginn
+Larry,Csonka
+Marlin,Briscoe
+Ed,Jenkins
+Otto,Stowe
+Howard,Twilley
+Paul,Warfield
+Marv,Fleming
+Jim,Mandich
+Norm,Evans
+Howard,Kindig
+Bob,Kuechenberg
+Jim,Langer
+Larry,Little
+Al,Jenkins
+Doug,Crusan
+Wayne,Moore
+Vern,Den,Herder
+Jim,Dunaway
+Manny,Fernandez
+Bob,Heinz
+Maulty,Moore
+Bill,Stanfill
+Larry,Ball
+Nick,Buoniconti
+Mike,Kolen
+Bob,Matheson
+Jesse,Powell
+Doug,Swift
+Dick,Anderson
+Charlie,Babb
+Tim,Foley
+Mike,Howell
+Curtis,Johnson
+Lloyd,Mumphord
+Jake,Scott
+Larry,Seiple
+Garo,Yepremian
+Billy,Lothridge
+
+Mary,Harvey
+April,Heinrichs
+Shannon,Higgins
+Carla,Werden
+Lori,Henry
+Brandi,Chastain
+Tracey,Bates
+Linda,Hamilton
+Mia,Hamm
+Michelle,Akers
+Julie,Foudy
+Carin,Jennings
+Kristine,Lilly
+Joy,Biefeld
+Wendy,Gebauer
+Debbie,Belkin
+Amy,Allmann
+Kim,MaslinKammerdeiner

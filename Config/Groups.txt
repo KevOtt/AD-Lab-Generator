@@ -1,0 +1,47 @@
+###########################
+# This config file specifies the groups the AD Lab Generator will use
+# Groups should be specified, one per line, in the format "GroupName,Type"
+# The Lab Generator uses "role groups" and "access group" types to mimick an RBAC model
+# By default, some of both kinds will need to be specified. Names must follow AD conventions.
+# Lines beginning with "#" are comment lines
+###########################
+
+# Role groups
+Marketing,Role
+Finance,Role
+Accounting,Role
+Engineering,Role
+Information Technology,Role
+Purchasing,Role
+Sales,Role
+Shipping,Role
+Warehouse,Role
+
+# Access Groups
+File Share Admin,Access
+File Share F Drive,Access
+File Share G Drive,Access
+File Share H Drive,Access
+File Share J Drive,Access
+Printer Access,Access
+MFP Access,Access
+ERP Admin,Access
+ERP Payment Access,Access
+ERP Sales,Access
+ERP Read,Access
+Sales Report Admin,Access
+Sales Report Read,Access
+Inventory Report Admin,Access
+Inventory Report Read,Access
+PLM Admin,Access
+PLM RW,Acesss
+PLM Read,Access
+Server Admin,Access
+Desktop Admin,Access
+Merch App Admin,Access
+Merch App Read,Access
+Shared Calendar Admin,Access
+Shared Calendar RW,Access
+Shared Calendar Read,Access
+
+
