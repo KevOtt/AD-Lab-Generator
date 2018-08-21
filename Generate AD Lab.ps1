@@ -22,9 +22,9 @@
     or to add only the role groups into access groups, so no users are placed into access groups, run
     with the switch "CleanRoles".
 
-    For now, the tool will only create all groups and users in a single OU or CN. If none is specified,
-    all objects will be created in the Users Container by default; otherwise specify the Distinguished Name
-    of an existing OU or CN for the argument "TargetLocation".
+    For now, the tool will only create all groups and users in a single OU or CN. All objects will be
+    created in the Users Container by default; otherwise specify the Distinguished Name of an existing
+    OU or CN for the argument "TargetLocation" to create all objects in that location.
 .EXAMPLE
 	& '.\Generate AD Lab.ps1' -Domain 'Example.com'
     Populates objects into the Users Container of the domain "Example.com", with the default setup. 
@@ -69,6 +69,7 @@
     Version: 1.0
     Date: 8/20/2018
     Author: Kevin Ott
+#Requires -Version 3
 .LINK
     https://github.com/KevOtt/AD-Lab-Generator
 #> 
@@ -107,7 +108,7 @@ TRY{
     .($ScriptDir + '\Functions\Query-ADObject.ps1')
     }
 CATCH{
-    throw ('Unable to locate file dependent file: ' + $_.Exception)
+    throw ('Unable to locate dependent file: ' + $_.Exception)
     }
 
 Write-Output 'Starting AD Lab Generation'
@@ -323,7 +324,7 @@ $UserNames | ForEach-Object{
 
     <# 
     Not going to bother checking for existing accounts, since they are randomized it should be a small
-    chance to have an existing account and failures should not cause further problems unlike groups.
+    chance to have an existing account and failures should not cause further problems like groups.
     #>
 
     # Create AD User
@@ -376,4 +377,3 @@ if($ExportPasswords -eq $true){
     }
 
 Write-Output 'AD Lab Genernation has completed successfully'
-
