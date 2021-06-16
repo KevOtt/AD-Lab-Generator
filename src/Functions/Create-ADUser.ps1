@@ -157,6 +157,18 @@ Function Create-ADUser{
     if($LastName -ne ''){$newUser.Properties['sn'].Value = $LastName}
     if($Description -ne ''){$newUser.Properties['Description'].Value = $Description}
     $newUser.Properties['pwdLastSet'].Value = $pwdLastSet
+
+    $domain = [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain().Name
+    $email = '';
+    if($FirstName -And $LastName){
+        $firstLetter = $FirstName[0]
+        $email = "${firstLetter}.${LastName}@${domain}".ToLower()
+    }else{
+        $email = "${SamAccountName}@${domain}".ToLower()
+    }
+    $newUser.Properties['mail'].Value = $email
+    $newUser.Properties['userPrincipalName'].Value = "${SamAccountName}@${domain}"
+   
     # probably a cleaner way to iterate these, will re-look if the rest of the standard attribs are added
 
     # Determine UserAccountControl value
