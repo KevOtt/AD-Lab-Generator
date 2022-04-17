@@ -84,85 +84,61 @@ Param(
     [int]$NumberOfUsers = 40,
     [string]$TargetLocation,
     [switch]$ExportPasswords,
-    [string]$UserNameSeedFile,
-    [string]$GroupsConfFile
+    [string]$UserNameSeedFile = "$PSScriptRoot\Config\Names.txt",
+    [string]$GroupsConfFile = "$PSScriptRoot\Config\Groups.txt"
 )
 
-# Determine script location
-# ScriptDir is used for the config files, dot-sourcing, and password export
-if($psISE -eq $null){
-    $ScriptDir = ($MyInvocation.MyCommand.Path | Split-Path -Parent)
+# Dot-source functions
+$Functions = @(
+    'Create-ADGroup',
+    'Create-ADUser',
+    'Get-RandomAccessGroups',
+    'Modify-ADGroupMembers',
+    'New-Password',
+    'Query-ADObject'
+)
+
+foreach ($function in $Functions){
+    TRY{
+        . "$PSScriptRoot\Functions\$function"
     }
-else{
-    $ScriptDir = ($psISE.CurrentFile.FullPath | Split-Path -Parent)
+    CATCH{
+        throw ("Unable to load dependent file $function`.ps1: " + $_.Exception)
     }
+}
 
-## Dot-source functions
-
-TRY{
-    .($ScriptDir + '\Functions\Create-ADGroup.ps1')
-    .($ScriptDir + '\Functions\Create-ADUser.ps1')
-    .($ScriptDir + '\Functions\Get-RandomAccessGroups.ps1')
-    .($ScriptDir + '\Functions\Modify-ADGroupMembers.ps1')
-    .($ScriptDir + '\Functions\New-Password.ps1')
-    .($ScriptDir + '\Functions\Query-ADObject.ps1')
-    }
-CATCH{
-    throw ('Unable to locate dependent file: ' + $_.Exception)
-    }
-
-Write-Output 'Starting AD Lab Generation'
-
-## Validate script arguments
-
-# Check role parameters
+# Validate script arguments
 if($CleanRoles -eq $true -and $NoRoles -eq $true){
-    throw 'Swiches -CleanRoles and -NoRoles cannot be specified together'
+    throw 'Switches -CleanRoles and -NoRoles cannot be specified together'
     }
 
-# For user config file if no value specified, check for default path, stop if not found
-if($UserNameSeedFile -eq '' -or $UserNameSeedFile -eq $null){
-        $p = '\Config\Names.txt'
-        if(Test-Path ($ScriptDir + $p)){
-            $UserNameSeedFile = ($ScriptDir + $p)
-            }
-        else{
-            throw 'User name seed config file not found in default location and no path specified.'
-            }
-        }
-# Users config file location specified, check for existence
-else{
-    if(!(Test-Path $UserNameSeedFile)){
-        throw ('User seed config file not found in specified location')
-        }
-    }
-# For group config file if no value specified, check for default path, stop if not found
-if($GroupsConfFile -eq '' -or $GroupsConfFile -eq $null){
-        $p = '\Config\Groups.txt'
-        if(Test-Path ($ScriptDir + $p)){
-            $GroupsConfFile = ($ScriptDir + $p)
-            }
-        else{
-            throw 'Groups config file not found in default location and no path specified.'
-            }
-        }
-# Group config file specified, check for existance
-else{
-    if(!(Test-Path $GroupsConfFile)){
-        throw ('Groups config file not found in specified location')
-        }
-    }
+# Get Config File Content
+$ConfFiles = @(
+    @{UserNameSeedFile = $UserNameSeedFile}, 
+    @{GroupsConfFile = $GroupsConfFile}
+)
 
-## Determine the target OU
+foreach ($file in $ConfFiles){
+    $FileName = $_.Keys[0]
+    $Path = $_.$Filename
+    if(Test-Path ($Path)){
+        $Content = Get-Content $UserNameSeedFile -ErrorAction Stop
+        Set-Variable -Name ($FileName + 'Content') -Value $Content
+    }
+    else{
+        throw '$Filename not found at $UserNameSeedFile'
+    }
+}
 
-# If no path specified, default to users container of targeted domain
-if($TargetLocation -eq '' -or $TargetLocation -eq $null){
-    $TargetLocation = ('CN=Users,' + (@(ForEach($s in ($Domain.Split('.'))) {('DC=' + $s)}) -join ','))
+# Get Target Location
+$BaseDN = (@(ForEach($s in ($Domain.Split('.'))) {('DC=' + $s)}) -join ',')
+if($TargetLocation -eq '' -or $null -eq $TargetLocation){
+    $TargetLocation = ('CN=Users,' + $BaseDN)
     }
 else{
     # If a TargetOU was provided, we'll check that we can find it in the specified Domain and that it is an OU or CN
     $directorySearcher = New-Object ([System.DirectoryServices.DirectorySearcher])
-    $directorySearcher.SearchRoot = ('LDAP://' + (@(ForEach($s in ($Domain.Split('.'))) {('DC=' + $s)}) -join ','))
+    $directorySearcher.SearchRoot = ('LDAP://' + $BaseDN)
     $directorySearcher.Filter = "DistinguishedName=$TargetLocation"
     TRY{
         $r = $directorySearcher.FindOne()
@@ -170,21 +146,17 @@ else{
     CATCH{
         # Ignoring exceptions on FindOne, we'll throw a better exception below
         }
-    if($r -eq $null -or ($r.Properties.objectclass -notcontains 'container' -and $r.Properties.objectclass -notcontains 'OrganizationalUnit')){
+    if($null -eq $r -or ($r.Properties.objectclass -notcontains 'container' -and $r.Properties.objectclass -notcontains 'OrganizationalUnit')){
         throw 'Provided TargetOU cannot be found or is not either a Container or Organizational Unit'
         }
     }
 Write-Verbose "Lab objects will be created in $TargetLocation"
 
 
-## Get configs
 
-# For both config files, we ignore any line with '#' and convert each entry to a PSObject,
-# assuming the entries are comma separated values in the right order
-
-# Get group config file content
+# Parse Config File Content
 $Groups = @()
-Get-Content $GroupsConfFile -ErrorAction Stop | Where-Object {$_ -notlike '#*' -and $_ -ne ''} -ErrorAction Stop | ForEach-Object{
+$GroupsConfFileContent | Where-Object {$_ -notlike '#*' -and $_ -ne ''} | ForEach-Object{
     # Continue on any errors, we'll catch format problems below
     if($_.contains(',') -and $_[$_.count -1] -ne ',' -and $_[0] -ne ','){
         $g = (New-Object -TypeName psobject -Property @{'GroupName' = ($_.split(',')[0]).ToString().TrimStart();'Type' = ($_.split(',')[1]).ToString().TrimStart()})
@@ -210,7 +182,7 @@ Get-Content $GroupsConfFile -ErrorAction Stop | Where-Object {$_ -notlike '#*' -
 
 # Get user name seed config file content
 $NameSeeds = @()
-Get-Content $UserNameSeedFile -ErrorAction Stop | Where-Object {$_ -notlike '#*' -and $_ -ne ''} -ErrorAction Stop | ForEach-Object{
+$UserNameSeedFileContent | Where-Object {$_ -notlike '#*' -and $_ -ne ''} | ForEach-Object{
     # Not checking for uniquness, duplicate entries will be allowed.
     if($_.contains(',') -and $_[$_.count -1] -ne ',' -and $_[0] -ne ','){
         $n = (New-Object -TypeName psobject -Property @{'FirstName' = ($_.split(',')[0]).ToString().TrimStart();'LastName' = ($_.split(',')[1]).ToString().TrimStart()})
