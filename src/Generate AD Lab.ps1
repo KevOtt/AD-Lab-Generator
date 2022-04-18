@@ -8,66 +8,106 @@
     with a randomized setup of users and groups for testing purposes.
 .DESCRIPTION
     This script and config files was created to provide a way to populate an
-    AD lab with groups and users for use in testing of other AD tools and scripts.
-    The script will create randomized user names based on a configurable seed file
-    called Names.txt and create groups defined in Groups.txt.
+    AD lab with groups and users for testing of other AD tools and scripts.
+    The script will create randomized user names based on a configurable seed 
+    file called Names.txt and create groups defined in Groups.txt.
 
-    In the default mode, a role-based access model is followed, and users are placed
-    into a single "role group" such as "Sales" and "Engineering". These role groups are then placed
-    into dummy "access groups". To make it more relavant to most real world AD setups, the users
-    are also placed into a random number of access groups. No access is actually allocated
-    by this process, we're just creating the groups and users.
+    In the default mode, a role-based access model is followed, and users are 
+    placed into a single "role group" such as "Sales" and "Engineering". These
+    role groups are then placed into security groups as well as a distribution 
+    group. To make it more relavant to most real world AD setups, the users are 
+    also placed into a random number of security groups and distribution groups.
 
-    To create users that are just placed into dummy access groups, run with the switch "-NoRoles",
-    or to add only the role groups into access groups, so no users are placed into access groups, run
-    with the switch "CleanRoles".
+    To create users that are just placed into random security grous and 
+    distribuion groups, run with the switch "-NoRoles". To create users that are
+    only members of "role groups" to simulate good RBAC, run with the switch
+    "-CleanRoles". To forgo creating distribution groups, run with the switch
+    "-NoDistributionGroups"
 
-    For now, the tool will only create all groups and users in a single OU or CN. All objects will be
-    created in the Users Container by default; otherwise specify the Distinguished Name of an existing
-    OU or CN for the argument "TargetLocation" to create all objects in that location.
+    By default all grous and users will be created in the Users container. The 
+    default location of groups and users can be changed by specifying one or
+    more OUs or Containers for the following options: RoleGroupLocations, 
+    AccessGroupLocations, DistributionGroupLocations, UserLocations. If more
+    than one is specified, the objects will be created in one at random.
+    Specifying a location for the parameter DefaultLocation will set the
+    creation location for anything not otherwise specified.
 .EXAMPLE
 	& '.\Generate AD Lab.ps1' -Domain 'Example.com'
-    Populates objects into the Users Container of the domain "Example.com", with the default setup. 
+
+    Populates objects into the Users Container of the domain "Example.com", with
+    the default setup.
 .EXAMPLE
-	& '.\Generate AD Lab.ps1' -Domain 'Example.com' -TargetLocation 'OU=TestLab,DC=Example,DC=Com'
-    Populates objects into the OU "TestLab" of the domain "Example.com", with the default setup. 
+	& '.\Generate AD Lab.ps1' -Domain 'Example.com' -DefaultLocation 
+    'OU=TestLab,DC=Example,DC=Com'
+
+    Populates objects into the OU "TestLab" of the domain "Example.com", with 
+    the default setup. 
 .EXAMPLE
-	& '.\Generate AD Lab.ps1' -Domain 'Example.com' -TargetLocation 'OU=TestLab,DC=Example,DC=Com' -NumberOfUsers 50 -CleanRoles -ExportPasswords
-    Populates objects into the OU "TestLab" of the domain "Example.com", emulating proper role-based access.
-    Passwords for created users will be output in a new file created in the script directory. 50 users will be
+	& '.\Generate AD Lab.ps1' -Domain 'Example.com' -DefaultLocation 
+    'OU=TestLab,DC=Example,DC=Com' -NumberOfUsers 50 -CleanRoles -ExportPasswords
+
+    Populates objects into the OU "TestLab" of the domain "Example.com", 
+    emulating proper role-based access. Passwords for created users will be 
+    output in a new file created in the script directory. 50 users will be
     created.
 .PARAMETER Domain
     The full name of the domain which will be populated, required parameter.
 .PARAMETER CleanRoles
-    Specifies that users should be added only to a role group, and not to additional access groups.
-    Simulates a proper role-based access setup.
+    Specifies that users should be added only to a role group, and not to 
+    additional access groups. Simulates a proper role-based access setup.
 .PARAMETER NoRoles
-    Specifies that any groups in Groups.txt marked as type "role" will not be created, and users
-    will be added to "access" groups only, and not to any "role" type groups. Simulates an environment
-    with no role based access.
+    Specifies that any groups in Groups.txt marked as type "role" will not be 
+    created, and users will be added to security and distribution groups only, 
+    and not to any "role" type groups. Simulates an environment with no role 
+    based access.
+.PARAMETER MultiRoles
+    Specifies that users will be added to multiple role groups.
+.PARAMETER NoDistributionGroups
+    Specifieds that distribution groups will not be created.
 .PARAMETER NumberOfUsers
-    Total number of users to generate, valid numbers are 1 to 10,000. The default number of users is 40.
-    Note that if you do not have sufficient name seeds in Names.txt, you may run into failures if the specified 
-    number of users is too high.
-.PARAMETER TargetLocation
-    The OrganizationalUnit or Container where the group and user objects should be created. At this time the tool
-    only supports creating all objects in a single place. The OU or CN specified must already exist in the target 
-    domain. If no location is specified, the Users container will be used by default, it is reccomended to create the
-    lab objects in a separate location.
+    Total number of users to generate, valid numbers are 1 to 10,000. The 
+    default number of users is 40. Note that if you do not have sufficient name
+    seeds in Names.txt, names may be repeated. SamAccountNames will be appended
+    with a numeral for unique-ness.
+.PARAMETER DefaultLocation
+    The organizational unit or container where the group and users will be
+    created if no other parameters are specified. If no default location is 
+    specified, the Users container will be used as the default location.
+.PARAMETER RoleGroupLocations
+    The organizational unit(s) or container(s) where role groups will be
+    created. If more than one is specified, they will be created equally across
+    the locations. If no location is specified, role groups will be created in
+    the default location.
+.PARAMETER AccessGroupLocations
+    The organizational unit(s) or container(s) where access groups will be
+    created. If more than one is specified, they will be created equally across
+    the locations. If no location is specified, access groups will be created in
+    the default location.
+.PARAMETER DistributionGroupLocations
+    The organizational unit(s) or container(s) where distribution groups will be
+    created. If more than one is specified, they will be created equally across
+    the locations. If no location is specified, distribution groups will be 
+    created in the default location.
+.PARAMETER UserLocations
+    The organizational unit(s) or container(s) where users will be created. If 
+    more than one is specified, they will be created equally across
+    the locations. If no location is specified, users will be created in the 
+    default location.
 .PARAMETER ExportPasswords
-    Enabling this switch will write a file to the script directory that contains all of the passwords for the created
-    users. Useful if you want to test something and don't want to reset all of the user passwords. Otherwise user passwords
-    will not be presented.
+    Enabling this switch will write a file to the script directory that contains
+    all of the passwords for the created users. Useful if you want to test 
+    something and don't want to reset all of the user passwords. Otherwise user 
+    passwords will not be presented.
 .PARAMETER UserNameSeedFile
-    Specify an alternate location for the username seed file, otherwise by default the script will look in the config folder
-    for a file.
+    Specify an alternate location for the username seed file, otherwise by 
+    default the script will look in the config folder for a file.
 .PARAMETER GroupsConfFile
-    Specify an alternate location for the group configuration file, otherwise by default the script will look in the config folder
-    for a file.
+    Specify an alternate location for the group configuration file, otherwise by
+    default the script will look in the config folder for a file.
 .NOTES
     Filename: Generate AD Lab.ps1
-    Version: 1.0
-    Date: 8/20/2018
+    Version: 2.0
+    Original Creation Date: 8/20/2018
     Author: Kevin Ott
 #Requires -Version 3
 .LINK
@@ -80,9 +120,15 @@ Param(
     [string]$Domain,
     [switch]$CleanRoles,
     [switch]$NoRoles,
+    [swtich]$MultiRoles,
+    [switch]$NoDistributionGroups,
     [ValidateRange(1,10000)]
     [int]$NumberOfUsers = 40,
-    [string]$TargetLocation,
+    [string]$DefaultLocation,
+    [string[]]$RoleGroupLocations,
+    [string[]]$AccessGroupLocations,
+    [string[]]$DistributionGroupLocations,
+    [string[]]$UserLocations,
     [switch]$ExportPasswords,
     [string]$UserNameSeedFile = "$PSScriptRoot\Config\Names.txt",
     [string]$GroupsConfFile = "$PSScriptRoot\Config\Groups.txt"
@@ -99,7 +145,7 @@ $Functions = @(
 )
 
 foreach ($function in $Functions){
-    TRY{
+    TRY {
         . "$PSScriptRoot\Functions\$function"
     }
     CATCH{
@@ -110,7 +156,7 @@ foreach ($function in $Functions){
 # Validate script arguments
 if($CleanRoles -eq $true -and $NoRoles -eq $true){
     throw 'Switches -CleanRoles and -NoRoles cannot be specified together'
-    }
+}
 
 # Get Config File Content
 $ConfFiles = @(
@@ -142,14 +188,14 @@ else{
     $directorySearcher.Filter = "DistinguishedName=$TargetLocation"
     TRY{
         $r = $directorySearcher.FindOne()
-        }
+    }
     CATCH{
         # Ignoring exceptions on FindOne, we'll throw a better exception below
-        }
+    }
     if($null -eq $r -or ($r.Properties.objectclass -notcontains 'container' -and $r.Properties.objectclass -notcontains 'OrganizationalUnit')){
         throw 'Provided TargetOU cannot be found or is not either a Container or Organizational Unit'
-        }
     }
+}
 Write-Verbose "Lab objects will be created in $TargetLocation"
 
 
